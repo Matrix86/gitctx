@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/Matrix86/gitctx/internal/core"
@@ -20,21 +22,17 @@ var argOpts struct {
 }
 
 var (
-	Config         *core.Configuration
-	currentCtxFile string
-	configFilePath string
+	currentContexts *core.CurrentContexts
+	Config          *core.Configuration
+	currentCtxFile  string
+	configFilePath  string
 )
 
-func main() {
-	args, err := flags.Parse(&argOpts)
-	if err != nil {
-		panic(err)
-	}
-
+func initDefaultConfig() {
 	if argOpts.SSHConfig == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+			core.Fatal("[!] error: %s\n", err)
 		}
 		argOpts.SSHConfig = fmt.Sprintf("%s/.ssh/config", home)
 	}
@@ -46,55 +44,102 @@ func main() {
 	if argOpts.Config == "" {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+			core.Fatal("[!] error: %s", err)
 		}
 		argOpts.Config = fmt.Sprintf("%s/.gitctx", home)
 	}
+}
 
+func main() {
+	args, err := flags.Parse(&argOpts)
+	if err != nil {
+		switch flagsErr := err.(type) {
+		case flags.ErrorType:
+			if flagsErr == flags.ErrHelp {
+				os.Exit(0)
+			}
+			os.Exit(1)
+		default:
+			os.Exit(1)
+		}
+	}
+
+	initDefaultConfig()
+
+	// Init the configuration folder if it doesn't exist
 	configFilePath = strings.Join([]string{argOpts.Config, "config.yml"}, "/")
 	if _, err := os.Stat(argOpts.Config); os.IsNotExist(err) {
 		os.MkdirAll(argOpts.Config, os.ModePerm)
 		// creating empty config file
 		err = core.CreateEmptyConfig(configFilePath)
 		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+			core.Fatal("[!] error: %s", err)
 		}
 	}
 
+	// Reading configuration's file
 	Config, err = core.LoadConfiguration(configFilePath)
 	if err != nil {
-		panic(fmt.Sprintf("[!] error: loading configuration: %s\n", err))
+		core.Fatal("[!] error: loading configuration: %s", err)
 	}
 
 	currentCtxFile = strings.Join([]string{argOpts.Config, "context"}, "/")
+	if _, err := os.Stat(currentCtxFile); errors.Is(err, os.ErrNotExist) {
+		err = core.CreateEmptyFile(currentCtxFile)
+		if err != nil {
+			core.Fatal("[!] error: %s", err)
+		}
+	}
+
+	currentContexts, err = core.LoadFromCurrentFile(currentCtxFile)
+	if err != nil {
+		core.Fatal("[!] error: loading current contexts: %s", err)
+	}
 
 	err = checkSSHConfig()
 	if err != nil {
-		panic(fmt.Sprintf("[!] error: %s\n", err))
+		core.Fatal("[!] error: %s", err)
 	}
 
 	if argOpts.Rm != "" {
 		err := removeContext()
 		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+			core.Fatal("[!] error: %s", err)
+		}
+		return
+	}
+
+	if argOpts.Add {
+		err := addContext()
+		if err != nil {
+			core.Fatal("[!] error: %s", err)
 		}
 		return
 	}
 
 	if len(args) == 0 {
-		// listing current github contexts
+		// listing current contexts
 		err := listContexts()
 		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+			core.Fatal("[!] error: %s", err)
 		}
 
 	} else if len(args) == 1 {
-		// changing the current github context
-		err := setContext(args[0])
-		if err != nil {
-			panic(fmt.Sprintf("[!] error: %s\n", err))
+		re := regexp.MustCompile(`([^=]+)`)
+		matches := re.FindAllString(args[0], -1)
+		if len(matches) == 2 {
+			// renaming a context
+			if err = renameContext(matches[0], matches[1]); err != nil {
+				core.Fatal("[!] error: %s", err)
+			}
+		} else {
+			// changing the current context
+			err := setContext(args[0])
+			if err != nil {
+				core.Fatal("[!] error: %s", err)
+			}
 		}
+	} else {
+		core.Fatal("[!] error: command not supported")
 	}
-
-	//fmt.Printf("%#v %v\n", argOpts, args)
 }

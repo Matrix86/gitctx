@@ -2,16 +2,19 @@ package main
 
 import "fmt"
 
-func removeContext() error {
-	if _, ok := Config.Hosts[argOpts.Rm]; ok {
-		delete(Config.Hosts, argOpts.Rm)
-	} else {
-		return fmt.Errorf("context %s not found", argOpts.Rm)
+func renameContext(from string, to string) error {
+	if _, ok := Config.Hosts[from]; !ok {
+		return fmt.Errorf("context %s not found", from)
 	}
+	if _, ok := Config.Hosts[to]; ok {
+		return fmt.Errorf("context %s already exists", to)
+	}
+	Config.Hosts[to] = Config.Hosts[from]
+	delete(Config.Hosts, from)
 
 	// set one of the remaining contexts
 	for n, ctx := range *currentContexts {
-		if ctx.Name == argOpts.Rm {
+		if ctx.Name == from {
 			delete(*currentContexts, n)
 			currentContexts.WriteOnFile(currentCtxFile)
 			break

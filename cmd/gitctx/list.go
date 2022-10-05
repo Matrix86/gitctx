@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/Matrix86/gitctx/internal/sshconfig"
 	"github.com/fatih/color"
 	"github.com/kevinburke/ssh_config"
 )
@@ -16,14 +15,11 @@ type Context struct {
 }
 
 func listContexts() error {
-	contexts, err := sshconfig.GetConfigHosts(currentCtxFile)
-	if err != nil {
-		return fmt.Errorf("reading %s: %s", currentCtxFile, err)
-	}
 	currentIdentity := ""
-	if len(contexts) > 0 {
-		// the context file should contain a single config
-		currentIdentity = contexts[0].IdentityFile
+	for _, ctx := range *currentContexts {
+		if ctx.Host == argOpts.Hostname {
+			currentIdentity = ctx.IdentityFile
+		}
 	}
 
 	for name, ctx := range Config.Hosts {

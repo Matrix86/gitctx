@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Matrix86/gitctx/internal/sshconfig"
+	"github.com/Matrix86/gitctx/internal/core"
 )
 
 func askYesNo(s string) bool {
@@ -35,7 +35,7 @@ func askYesNo(s string) bool {
 
 // if there are more configurations for the hostname we need to move them to a secondary config
 func checkSSHConfig() error {
-	hosts, err := sshconfig.GetConfigHosts(argOpts.SSHConfig)
+	hosts, err := core.GetConfigHosts(argOpts.SSHConfig)
 	if err != nil {
 		return err
 	}
@@ -49,37 +49,56 @@ func checkSSHConfig() error {
 	}
 	if len(found) > 0 {
 		if askYesNo(fmt.Sprintf("found configurations for Host '%s' on lines %s\nDo you want to move them to gitctx configuration?", argOpts.Hostname, strings.Join(found, ", "))) {
-			// TODO: read and move hosts to config
-			err = doBackup(argOpts.SSHConfig)
+			backupFile, err := doBackup(argOpts.SSHConfig)
 			if err != nil {
 				return err
 			}
+
+			fmt.Printf("Created a backup for %s to %s.\n", argOpts.SSHConfig, backupFile)
+
+			host2Remove := []string{}
+			for _, host := range hosts {
+				if host.Host == argOpts.Hostname {
+					host2Remove = append(host2Remove, host.Name)
+					Config.AddHost(host.Name, host.Host, host.User, host.IdentityFile)
+				}
+			}
+
+			if err := core.DeleteConfigHosts(argOpts.SSHConfig, host2Remove); err != nil {
+				return fmt.Errorf("removing hosts from %s: %s", argOpts.SSHConfig, err)
+			}
+
+			if err = Config.WriteConfiguration(configFilePath); err != nil {
+				return fmt.Errorf("can't write config file %s: %s", configFilePath, err)
+			}
+
+			fmt.Printf("Configuration imported on %s.\n", configFilePath)
 
 		} else {
 			return fmt.Errorf("stopping")
 		}
 	}
 
-	err = sshconfig.AddInclude(argOpts.SSHConfig, currentCtxFile)
+	err = core.AddInclude(argOpts.SSHConfig, currentCtxFile)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func doBackup(filename string) error {
+func doBackup(filename string) (string, error) {
 	sourceFileStat, err := os.Stat(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !sourceFileStat.Mode().IsRegular() {
-		return fmt.Errorf("%s is not a regular file", filename)
+		return "", fmt.Errorf("%s is not a regular file", filename)
 	}
 
 	src, err := os.Open(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer src.Close()
 
@@ -87,10 +106,10 @@ func doBackup(filename string) error {
 	fpath := filepath.Dir(filename)
 	dest, err := ioutil.TempFile(fpath, fname)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer dest.Close()
-	_, err = io.Copy(dest, src)
+	io.Copy(dest, src)
 
-	return err
+	return dest.Name(), nil
 }

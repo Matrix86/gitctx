@@ -20,6 +20,14 @@ type Configuration struct {
 	Hosts           map[string]Host `yaml:"hosts"`
 }
 
+func (c *Configuration) AddHost(name, hostname, user, IdentityFile string) {
+	c.Hosts[name] = Host{
+		Hostname:     hostname,
+		User:         user,
+		IdentityFile: IdentityFile,
+	}
+}
+
 func (c *Configuration) WriteConfiguration(filename string) error {
 	data, err := yaml.Marshal(c)
 	if err != nil {
@@ -41,10 +49,18 @@ func LoadConfiguration(path string) (*Configuration, error) {
 		return configuration, err
 	}
 
+	if configuration.Hosts == nil {
+		configuration.Hosts = map[string]Host{}
+	}
+
 	return configuration, nil
 }
 
 func CreateEmptyConfig(filename string) error {
 	content := []byte("default_hostname: \"github.com\"\nhosts:\n")
 	return os.WriteFile(filename, content, 0644)
+}
+
+func CreateEmptyFile(filename string) error {
+	return os.WriteFile(filename, []byte{}, 0644)
 }

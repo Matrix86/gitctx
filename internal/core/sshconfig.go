@@ -1,24 +1,21 @@
-package sshconfig
+package core
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
 )
 
-type Context struct {
-	Name         string
-	Host         string
-	User         string
-	IdentityFile string
-	Line         int
-}
-
 func GetConfigHosts(configPath string) ([]Context, error) {
 	ctxs := []Context{}
-	f, _ := os.Open(configPath)
+	f, err := os.Open(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("can't open %s: %s", configPath, err)
+	}
 	defer f.Close()
 	cfg, _ := ssh_config.Decode(f)
 	for _, host := range cfg.Hosts {
@@ -63,6 +60,70 @@ func GetConfigHosts(configPath string) ([]Context, error) {
 	return ctxs, nil
 }
 
+func commentLines(filename string, lines map[int]bool) error {
+	var buf strings.Builder
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fileScanner := bufio.NewScanner(f)
+	fileScanner.Split(bufio.ScanLines)
+
+	cline := 1
+	for fileScanner.Scan() {
+		if _, ok := lines[cline]; ok {
+			buf.WriteString("# ")
+		}
+		buf.WriteString(fmt.Sprintf("%s\n", fileScanner.Text()))
+		cline++
+	}
+
+	err = ioutil.WriteFile(filename, []byte(buf.String()), 0)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteConfigHosts(configPath string, hosts []string) error {
+	lines := map[int]bool{}
+	f, _ := os.Open(configPath)
+	defer f.Close()
+	cfg, _ := ssh_config.Decode(f)
+	for _, host := range cfg.Hosts {
+		// ignore patterns that contains multiple patterns or wildcards
+		if len(host.Patterns) > 1 {
+			continue
+		}
+		if strings.ContainsAny(host.Patterns[0].String(), "!* ") {
+			continue
+		}
+
+		clines := map[int]bool{}
+
+		for _, node := range host.Nodes {
+			clines[node.Pos().Line] = true
+		}
+
+		for _, h := range hosts {
+			if host.Patterns[0].String() == h {
+				for l, _ := range clines {
+					lines[l] = true
+				}
+			}
+		}
+	}
+
+	if err := commentLines(configPath, lines); err != nil {
+		return fmt.Errorf("can't comment lines on %s: %s", configPath, err)
+	}
+
+	return nil
+}
+
 func AddInclude(configPath string, include string) error {
 	f, _ := os.Open(configPath)
 	defer f.Close()
@@ -88,34 +149,10 @@ func AddInclude(configPath string, include string) error {
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(fmt.Sprintf("Include %s\n", include))
+	_, err = f.WriteString(fmt.Sprintf("\nInclude %s\n", include))
 	if err != nil {
 		return fmt.Errorf("adding the Include directive: %s", err)
 	}
 
-	return nil
-}
-
-func (ctx *Context) WriteOnFile(filename string) error {
-	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("Host %s\n", ctx.Name))
-	buf.WriteString(fmt.Sprintf("HostName %s\n", ctx.Host))
-	if ctx.User != "" {
-		buf.WriteString(fmt.Sprintf("User %s\n", ctx.User))
-	}
-	buf.WriteString(fmt.Sprintf("IdentityFile %s\n", ctx.IdentityFile))
-
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("opening the file %s: %s", filename, err)
-	}
-	defer f.Close()
-
-	f.Truncate(0)
-
-	_, err = f.WriteString(buf.String())
-	if err != nil {
-		return fmt.Errorf("adding the Include directive: %s", err)
-	}
 	return nil
 }
