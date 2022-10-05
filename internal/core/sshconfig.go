@@ -3,6 +3,7 @@ package core
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -142,16 +143,33 @@ func AddInclude(configPath string, include string) error {
 		}
 	}
 
+	f, err := os.Open(configPath)
+	if err != nil {
+		return fmt.Errorf("opening the file %s: %s", configPath, err)
+	}
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return fmt.Errorf("reading the file %s: %s", configPath, err)
+	}
+	f.Close()
+
 	// Include not found, let's add it
-	f, err := os.OpenFile(configPath, os.O_APPEND|os.O_WRONLY, 0644)
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintf("Include %s\n\n", include))
+	buf.WriteString(string(data))
+
+	f, err = os.OpenFile(configPath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("opening the file %s: %s", configPath, err)
 	}
 	defer f.Close()
 
-	_, err = f.WriteString(fmt.Sprintf("\nInclude %s\n", include))
+	f.Truncate(0)
+
+	_, err = f.WriteString(buf.String())
 	if err != nil {
-		return fmt.Errorf("adding the Include directive: %s", err)
+		return fmt.Errorf("writing on %s: %s", configPath, err)
 	}
 
 	return nil

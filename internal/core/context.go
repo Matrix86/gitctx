@@ -18,12 +18,12 @@ type Context struct {
 
 func (ctx *Context) String() string {
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("Host %s\n", ctx.Name))
-	buf.WriteString(fmt.Sprintf("  HostName %s\n", ctx.Host))
+	buf.WriteString(fmt.Sprintf("Host %s\n", ctx.Host))
+	buf.WriteString(fmt.Sprintf("\tHostName %s\n", ctx.Host))
 	if ctx.User != "" {
-		buf.WriteString(fmt.Sprintf("  User %s\n", ctx.User))
+		buf.WriteString(fmt.Sprintf("\tUser %s\n", ctx.User))
 	}
-	buf.WriteString(fmt.Sprintf("  IdentityFile %s\n\n", ctx.IdentityFile))
+	buf.WriteString(fmt.Sprintf("\tIdentityFile %s\n\n", ctx.IdentityFile))
 
 	return buf.String()
 }
