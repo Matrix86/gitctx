@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"os"
@@ -26,6 +27,9 @@ var (
 	Config          *core.Configuration
 	currentCtxFile  string
 	configFilePath  string
+
+	//go:embed completion/gitctx.bash
+	completionData []byte
 )
 
 func initDefaultConfig() {
@@ -75,6 +79,14 @@ func main() {
 		if err != nil {
 			core.Fatal("[!] error: %s", err)
 		}
+
+		// Completion file
+		completionFile := strings.Join([]string{argOpts.Config, "gitctx.bash"}, "/")
+		err = core.CreateFile(completionFile, completionData)
+		if err != nil {
+			core.Fatal("[!] error: %s", err)
+		}
+		core.Info("[@] add '. %s' to ~/.bashrc to enable the shell completion.", completionFile)
 	}
 
 	// Reading configuration's file

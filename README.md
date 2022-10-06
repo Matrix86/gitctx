@@ -30,4 +30,18 @@ Help Options:
 
 ## Installation
 
-> go install github.com/Matrix86/gitctx/cmd/gitctx@latest
+> $ go install github.com/Matrix86/gitctx/cmd/gitctx@latest
+
+### From sources
+
+> $ git clone git@github.com:Matrix86/gitctx.git
+
+> $ cd gitctx
+
+> $ make install
+
+## Completion
+
+To enable the shell completion, you need to move add the following line to the end of the `~/.bashrc` file:
+
+> . $HOME/.gitctx/gitctx.bash

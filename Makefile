@@ -18,7 +18,7 @@ lint:
 
 build: clean
 	@mkdir -p bin
-	go build -o bin/${TARGET} -v -ldflags=${LDFLAGS} cmd/${TARGET}/*
+	go build -o bin/${TARGET} -v -ldflags=${LDFLAGS} cmd/${TARGET}/*.go
 
 install: build
 	go install -ldflags=${LDFLAGS} ./cmd/${TARGET}

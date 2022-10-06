@@ -17,7 +17,7 @@ func Fatal(format string, a ...any) {
 
 func Info(format string, a ...any) {
 	lineColor := color.New()
-	lineColor.Add(color.FgRed)
+	lineColor.Add(color.FgGreen)
 	line := lineColor.Sprintf(format, a...)
 	fmt.Println(line)
 }

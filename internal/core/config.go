@@ -64,3 +64,7 @@ func CreateEmptyConfig(filename string) error {
 func CreateEmptyFile(filename string) error {
 	return os.WriteFile(filename, []byte{}, 0644)
 }
+
+func CreateFile(filename string, data []byte) error {
+	return os.WriteFile(filename, data, 0644)
+}
