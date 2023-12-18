@@ -1,7 +1,6 @@
 package core
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -14,10 +13,17 @@ type Host struct {
 	IdentityFile string `yaml:"identity_file"`
 }
 
+type GitSettings struct {
+	Name       string `yaml:"git_name"`
+	Email      string `yaml:"git_email"`
+	SigningKey string `yaml:"git_signingkey"`
+}
+
 // Configuration contains all the configs read by yaml file
 type Configuration struct {
-	DefaultHostname string          `yaml:"default_hostname"`
-	Hosts           map[string]Host `yaml:"hosts"`
+	DefaultHostname string                 `yaml:"default_hostname"`
+	Hosts           map[string]Host        `yaml:"hosts"`
+	GitSettings     map[string]GitSettings `yaml:"git_settings"`
 }
 
 func (c *Configuration) AddHost(name, hostname, user, IdentityFile string) {
@@ -34,7 +40,7 @@ func (c *Configuration) WriteConfiguration(filename string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, data, 0)
+	err = os.WriteFile(filename, data, 0)
 	if err != nil {
 		return err
 	}

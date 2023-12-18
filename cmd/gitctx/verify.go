@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,7 +103,7 @@ func doBackup(filename string) (string, error) {
 
 	fname := filepath.Base(filename)
 	fpath := filepath.Dir(filename)
-	dest, err := ioutil.TempFile(fpath, fname)
+	dest, err := os.CreateTemp(fpath, fname)
 	if err != nil {
 		return "", err
 	}

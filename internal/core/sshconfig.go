@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -82,7 +81,7 @@ func commentLines(filename string, lines map[int]bool) error {
 		cline++
 	}
 
-	err = ioutil.WriteFile(filename, []byte(buf.String()), 0)
+	err = os.WriteFile(filename, []byte(buf.String()), 0)
 	if err != nil {
 		return err
 	}
@@ -111,7 +110,7 @@ func DeleteConfigHosts(configPath string, hosts []string) error {
 
 		for _, h := range hosts {
 			if host.Patterns[0].String() == h {
-				for l, _ := range clines {
+				for l := range clines {
 					lines[l] = true
 				}
 			}

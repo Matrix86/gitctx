@@ -51,6 +51,10 @@ func addContext() error {
 		return err
 	}
 
+	if _, ok := Config.Hosts[name]; ok {
+		return fmt.Errorf("context %s already exists", name)
+	}
+
 	hostname, err := askData("Hostname", "")
 	if err != nil {
 		return err
@@ -64,6 +68,31 @@ func addContext() error {
 	identity, err := askData("IdentityFile", "[a-zA-Z0-9_.-\\/~]+")
 	if err != nil {
 		return err
+	}
+
+	// git global settings
+	gitGlobal, err := askData("Do you want to specify git global settings? [y/N]", "(y|Y|n|N)?")
+	if err != nil {
+		return err
+	}
+	if gitGlobal == "y" || gitGlobal == "Y" {
+		gitGlobalEmail, err := askData("user.email", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
+		if err != nil {
+			return err
+		}
+		gitGlobalName, err := askData("user.name", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
+		if err != nil {
+			return err
+		}
+		gitGlobalSigningKey, err := askData("user.signingkey", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
+		if err != nil {
+			return err
+		}
+		Config.GitSettings[name] = core.GitSettings{
+			Name:       gitGlobalName,
+			Email:      gitGlobalEmail,
+			SigningKey: gitGlobalSigningKey,
+		}
 	}
 
 	ctx := core.Host{

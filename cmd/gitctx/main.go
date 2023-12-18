@@ -17,6 +17,7 @@ var argOpts struct {
 	//Help   bool   `short:"h" long:"help" description:"Show this menu."`
 	Add       bool   `long:"add" description:"Create a new host in the selected config file."`
 	Rm        string `long:"rm" description:"Remove an existing host in the selected config file."`
+	Edit      string `long:"edit" description:"Edit an existing host in the selected config file."`
 	SSHConfig string `short:"s" long:"sshconfig" description:"Set the path of the config (default: ~/.ssh/config)."`
 	Hostname  string `long:"hostname" description:"Set the hostname to use for context change (default: github.com)."`
 	Config    string `long:"config" description:"Set the path of the gitctx folder (default: ~/.gitctx)."`
@@ -129,6 +130,14 @@ func main() {
 		return
 	}
 
+	if argOpts.Edit != "" {
+		err := editContext(argOpts.Edit)
+		if err != nil {
+			core.Fatal("[!] error: %s", err)
+		}
+		return
+	}
+
 	if len(args) == 0 {
 		// listing current contexts
 		err := listContexts()
@@ -140,12 +149,12 @@ func main() {
 		re := regexp.MustCompile(`([^=]+)`)
 		matches := re.FindAllString(args[0], -1)
 		if len(matches) == 2 {
-			// renaming a context
+			// renaming a context: gitctx oldname=newname
 			if err = renameContext(matches[0], matches[1]); err != nil {
 				core.Fatal("[!] error: %s", err)
 			}
 		} else {
-			// changing the current context
+			// changing the current context: gitctx ctxname
 			err := setContext(args[0])
 			if err != nil {
 				core.Fatal("[!] error: %s", err)

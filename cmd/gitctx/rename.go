@@ -12,6 +12,11 @@ func renameContext(from string, to string) error {
 	Config.Hosts[to] = Config.Hosts[from]
 	delete(Config.Hosts, from)
 
+	if old, ok := Config.GitSettings[from]; ok {
+		Config.GitSettings[to] = old
+		delete(Config.GitSettings, from)
+	}
+
 	// set one of the remaining contexts
 	for n, ctx := range *currentContexts {
 		if ctx.Name == from {

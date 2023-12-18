@@ -8,6 +8,7 @@ func removeContext() error {
 	} else {
 		return fmt.Errorf("context %s not found", argOpts.Rm)
 	}
+	delete(Config.GitSettings, argOpts.Rm)
 
 	// set one of the remaining contexts
 	for n, ctx := range *currentContexts {
