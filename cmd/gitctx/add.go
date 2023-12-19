@@ -71,29 +71,7 @@ func addContext() error {
 	}
 
 	// git global settings
-	gitGlobal, err := askData("Do you want to specify git global settings? [y/N]", "(y|Y|n|N)?")
-	if err != nil {
-		return err
-	}
-	if gitGlobal == "y" || gitGlobal == "Y" {
-		gitGlobalEmail, err := askData("user.email", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
-		if err != nil {
-			return err
-		}
-		gitGlobalName, err := askData("user.name", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
-		if err != nil {
-			return err
-		}
-		gitGlobalSigningKey, err := askData("user.signingkey", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]+")
-		if err != nil {
-			return err
-		}
-		Config.GitSettings[name] = core.GitSettings{
-			Name:       gitGlobalName,
-			Email:      gitGlobalEmail,
-			SigningKey: gitGlobalSigningKey,
-		}
-	}
+	fmt.Printf("It is possible to specify git configuration to be launched changing manually the file %s\n", configFilePath)
 
 	ctx := core.Host{
 		Hostname:     hostname,

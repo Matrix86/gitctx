@@ -71,31 +71,7 @@ func editContext(ctxName string) error {
 	}
 
 	// git global settings
-	gitGlobal, err := askData("Do you want to edit git global settings? [y/N]", "(y|Y|n|N)?")
-	if err != nil {
-		return err
-	}
-	if gitGlobal == "y" || gitGlobal == "Y" {
-		gitCtx := Config.GitSettings[ctxName]
-
-		gitGlobalEmail, err := askDataWithDefault("user.email", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]*", gitCtx.Email)
-		if err != nil {
-			return err
-		}
-		gitGlobalName, err := askDataWithDefault("user.name", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]*", gitCtx.Name)
-		if err != nil {
-			return err
-		}
-		gitGlobalSigningKey, err := askDataWithDefault("user.signingkey", "[a-zA-Z0-9_\\.\\-+\\\\/\\~@]*", gitCtx.SigningKey)
-		if err != nil {
-			return err
-		}
-		Config.GitSettings[ctxName] = core.GitSettings{
-			Name:       gitGlobalName,
-			Email:      gitGlobalEmail,
-			SigningKey: gitGlobalSigningKey,
-		}
-	}
+	fmt.Printf("It is possible to specify git configuration to be launched changing manually the file %s\n", configFilePath)
 
 	newCtx := core.Host{
 		Hostname:     hostname,

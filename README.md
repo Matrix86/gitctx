@@ -15,11 +15,12 @@ Using this tool you can switch from an account (referred as context) to another 
 
 ```
 Usage:
-  add [OPTIONS]
+  gitctx [OPTIONS]
 
 Application Options:
       --add        Create a new host in the selected config file.
       --rm=        Remove an existing host in the selected config file.
+      --edit=      Edit an existing host in the selected config file.
   -s, --sshconfig= Set the path of the config (default: ~/.ssh/config).
       --hostname=  Set the hostname to use for context change (default: github.com).
       --config=    Set the path of the gitctx folder (default: ~/.gitctx).
@@ -45,3 +46,18 @@ Help Options:
 To enable the shell completion, you need to move add the following line to the end of the `~/.bashrc` file:
 
 > . $HOME/.gitctx/gitctx.bash
+
+## Git configuration
+
+It is possible to define some GIT configs that should be called when you switch from a context to another. 
+In order to define them you can manually add them in the configuration file (stored on `~/.gitctx/config.yml` as default) as in the following example:
+
+```
+git_settings:
+    username: <-- it has to be the same used in the `hosts` field
+        user.name: MyName
+        user.email: something@me.me
+        user.signingkey: /home/ubuntu/.ssh/id_rsa.pub
+        commit.gpgsign: true
+        gpg.format: ssh
+```

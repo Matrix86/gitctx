@@ -14,16 +14,17 @@ type Host struct {
 }
 
 type GitSettings struct {
-	Name       string `yaml:"git_name"`
-	Email      string `yaml:"git_email"`
-	SigningKey string `yaml:"git_signingkey"`
+	Name          string `yaml:"name"`
+	Email         string `yaml:"email"`
+	SigningKey    string `yaml:"signingkey"`
+	CommitGPGSign string `yaml:"commit_gpgsign"`
 }
 
 // Configuration contains all the configs read by yaml file
 type Configuration struct {
-	DefaultHostname string                 `yaml:"default_hostname"`
-	Hosts           map[string]Host        `yaml:"hosts"`
-	GitSettings     map[string]GitSettings `yaml:"git_settings"`
+	DefaultHostname string                       `yaml:"default_hostname"`
+	Hosts           map[string]Host              `yaml:"hosts"`
+	GitSettings     map[string]map[string]string `yaml:"git_settings"`
 }
 
 func (c *Configuration) AddHost(name, hostname, user, IdentityFile string) {
@@ -58,7 +59,6 @@ func LoadConfiguration(path string) (*Configuration, error) {
 	if configuration.Hosts == nil {
 		configuration.Hosts = map[string]Host{}
 	}
-
 	return configuration, nil
 }
 
